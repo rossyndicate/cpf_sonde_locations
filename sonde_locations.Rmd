@@ -1,0 +1,54 @@
+---
+title: "Sonde Locations for Cameron Peak Reservoir Study"
+author: "Sam Struthers"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include= FALSE }
+knitr::opts_chunk$set(echo = TRUE)
+source("package_loader.R")
+
+colorize <- function(x, color) {
+  if (knitr::is_latex_output()) {
+    sprintf("\\textcolor{%s}{%s}", color, x)
+  } else if (knitr::is_html_output()) {
+    sprintf("<span style='color: %s;'>%s</span>", color,
+      x)
+  } else x
+}
+
+# Load data from sonde_locations.csv 
+sonde_locations <- read.csv("data/potential_sonde_locations.csv", header = TRUE)%>%
+  # seperate lat and long into seperate columns using , as a delimiter
+    separate(lat_long, c("lat", "long"), sep = ",")%>%
+    # convert lat and long to numeric
+    mutate(lat = as.numeric(lat), long = as.numeric(long))%>%
+    # using lat and long convert the dataframe into a sf object projected to crs 4326
+    st_as_sf(coords = c("long", "lat"), crs = 4326)%>%
+    #rename the column CPRW. to CPRW_Sensor?
+    rename(CPRW_Sensor = CPRW.)
+
+    #Create a map of the sonde locations using mapview
+    # color blue if CPRW_Sensor = yes and don't color if CPRW_Sensor = no
+    
+
+```
+
+## Map of site locations for sonde installations
+
+-   [Proposed Sonde Locations:]{style="color:#43B54C"} Sites were Larimer County already has a radio tower set up and we could co-locate sondes to reducing install costs
+
+-   [Current Water Quality Sondes:]{style="color:#808080"} Currently installed water quality sensors from City of Fort Collins or Warner College at the Mountain Campus
+
+-   [CPRW Sonde?:]{style="color:#EE2939"} Locations were CPRW sondes could be used and benefit their ongoing long term monitoring
+
+-   [ Science Sonde:]{style="color:#2E5895"} Joe Wright Inflow Site were Larimer County does not have a radio tower set up and sonde would answer science questions rather than provide decision support to utility providers.
+
+```{r, echo = FALSE}
+
+  mapview::mapview(filter(sonde_locations, Final == "Yes"&CPRW_Sensor == "no"&sci == "no"), layer.name = "Proposed Sonde Locations",col.regions = "#43B54C", cex = 8)+
+    mapview::mapview(filter(sonde_locations, current_network == "yes"), layer.name = "Current WQ Sensors",col.regions = "#808080", cex = 6)+
+    mapview::mapview(filter(sonde_locations, CPRW_Sensor == "yes"),layer.name = "CPRW Sonde?", col.regions = "#EE2939", cex = 8)+
+  mapview::mapview(filter(sonde_locations, sci == "yes"), layer.name = "Science Sonde",col.regions = "#2E5895", cex = 8)
+```
