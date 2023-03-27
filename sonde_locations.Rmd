@@ -9,6 +9,8 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 source("package_loader.R")
 
+`%nin%` = Negate(`%in%`)
+
 colorize <- function(x, color) {
   if (knitr::is_latex_output()) {
     sprintf("\\textcolor{%s}{%s}", color, x)
@@ -52,3 +54,39 @@ sonde_locations <- read.csv("data/potential_sonde_locations.csv", header = TRUE)
     mapview::mapview(filter(sonde_locations, CPRW_Sensor == "yes"),layer.name = "CPRW Sonde?", col.regions = "#EE2939", cex = 8)+
   mapview::mapview(filter(sonde_locations, sci == "yes"), layer.name = "Science Sonde",col.regions = "#2E5895", cex = 8)
 ```
+
+# Map with Q/ Precip sites too
+
+
+```{r, echo = FALSE}
+
+dwr_sites <- c("JWCCHACO", "CLANSECO", "LAPLODCO","MICDCPCO", "LAPTUNCO", "GRNDRDCO")
+larimer_sites <- c("11523","11517","6720", "11021", "6770", "11516", "11515", "11004", "11514", "11525", "11527","11530", "11531", "11528","11518")
+
+usgs_sites <- c( "6746095", "6746110")
+
+sensor_locations_all <- arrow::read_csv_arrow("data/compiled_q_locations.csv")%>%
+  filter(!is.na(lat)&!is.na(long))%>%
+  st_as_sf(coords = c("long", "lat"), crs = 4326)
+
+DWR_present <- filter(sensor_locations_all, site_code %in% dwr_sites)
+
+larimer_Q <- filter(sensor_locations_all, site_num %in% larimer_sites)
+
+usgs <- filter(sensor_locations_all, site_num %in% usgs_sites)
+
+discrete_sampling<- read_csv_arrow("data/cpf_sites.csv")%>%
+  filter(!is.na(Lat)&!is.na(Long)& watershed %nin% "CLP Tributary" & site_code %nin% c("ARCH","LEGC", "ELC",  "TIMB"))%>%
+  st_as_sf(coords = c("Long", "Lat"), crs = 4326)
+
+
+ 
+mapview::mapview(larimer_Q, layer.name = "Larimer County Sensors",col.regions = "red", cex = 5)+
+  mapview::mapview(usgs, layer.name = "USGS Sensors",col.regions = "blue", cex = 5)+
+mapview::mapview(DWR_present, layer.name = "DWR Sensors",col.regions = "orange", cex = 5)+
+    mapview::mapview(discrete_sampling, layer.name = "Grab Sample Locations", col.regions = "purple", cex = 5)+
+   mapview::mapview(filter(sonde_locations, Final == "Yes"), layer.name = "Proposed Sonde Locations",col.regions = "#43B54C", cex = 8)
+  
+  
+```
+
