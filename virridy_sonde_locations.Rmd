@@ -1,0 +1,96 @@
+---
+title: "CU/Virridy X ROSS Sonde Locations for Cameron Peak Study"
+author: "Sam Struthers"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include= FALSE }
+knitr::opts_chunk$set(echo = TRUE)
+source("package_loader.R")
+
+`%nin%` = Negate(`%in%`)
+
+colorize <- function(x, color) {
+  if (knitr::is_latex_output()) {
+    sprintf("\\textcolor{%s}{%s}", color, x)
+  } else if (knitr::is_html_output()) {
+    sprintf("<span style='color: %s;'>%s</span>", color,
+      x)
+  } else x
+}
+
+# Load data from sonde_locations.csv 
+sonde_locations <- read.csv("data/potential_sonde_locations.csv", header = TRUE)%>%
+  # seperate lat and long into seperate columns using , as a delimiter
+    separate(lat_long, c("lat", "long"), sep = ",")%>%
+    # convert lat and long to numeric
+    mutate(lat = as.numeric(lat), long = as.numeric(long))%>%
+    # using lat and long convert the dataframe into a sf object projected to crs 4326
+    st_as_sf(coords = c("long", "lat"), crs = 4326)%>%
+    #rename the column CPRW. to CPRW_Sensor?
+    rename(CPRW_Sensor = CPRW.)
+
+    #Create a map of the sonde locations using mapview
+    # color blue if CPRW_Sensor = yes and don't color if CPRW_Sensor = no
+    
+
+```
+
+```{r df_setup, echo = FALSE}
+dwr_sites <- c("JWCCHACO", "CLANSECO", "LAPLODCO","MICDCPCO", "LAPTUNCO", "GRNDRDCO")
+larimer_sites <- c("11523","11517","6720", "11021", "6770", "11516", "11515", "11004", "11514", "11525", "11527","11530", "11531", "11528","11518")
+
+usgs_sites <- c( "6746095", "6746110")
+
+sensor_locations_all <- arrow::read_csv_arrow("data/compiled_q_locations.csv")%>%
+  filter(!is.na(lat)&!is.na(long))%>%
+  st_as_sf(coords = c("long", "lat"), crs = 4326)
+
+DWR_present <- filter(sensor_locations_all, site_code %in% dwr_sites)
+
+larimer_Q <- filter(sensor_locations_all, site_num %in% larimer_sites)
+
+usgs <- filter(sensor_locations_all, site_num %in% usgs_sites)
+
+discrete_sampling<- arrow::read_csv_arrow("data/cpf_sites.csv")%>%
+  filter(!is.na(Lat)&!is.na(Long)& watershed %nin% "CLP Tributary" & site_code %nin% c("ARCH","LEGC", "ELC",  "TIMB"))%>%
+  st_as_sf(coords = c("Long", "Lat"), crs = 4326)
+```
+
+## Map 1: WQ Sonde Locations Only
+
+-   [Current ROSS Network:]{style="color:#43B54C"} Also known as the Poudre Water Quality Network. These are our currently installed water quality sensors upstream, within and downstream the City of Fort Collins
+
+-   [Current Upper Water Quality Network:]{style="color:red"} Currently installed water quality sensors by City of Fort Collins
+
+-   [Proposed Upper Water Quality Network:]{style="color:blue"} Sites identified by ROSS and are planned installs for this year. Most are co-located with Larimer County, USGS or DWR discharge guages.
+
+-   [Virridy Sonde?:]{style="color:purple"} Possible site for Virridy to install sonde while benefiting our network.
+
+```{r, echo = FALSE, out.width="100%"}
+
+   
+      mapview::mapview(filter(sonde_locations, Final == "Yes" & Installed == "FCGOV"), layer.name = "Current Upper WQ Network",col.regions = "red1", cex = 8)+
+    mapview::mapview(filter(sonde_locations,Final == "Yes"& Installed == "No"), layer.name = "Proposed Upper WQ Network",col.regions = "blue", cex = 8)+
+ 
+        mapview::mapview(filter(sonde_locations, Final == "Yes"&Installed == "Yes"), layer.name = "Current Lower WQ Network",col.regions = "#43B54C", cex = 8)+
+         mapview::mapview(filter(sonde_locations,site_name == "Spring Creek"|site_name == "Boxelder Creek"), layer.name = "Proposed Lower WQ Network",col.regions = "orange", cex = 8)
+  
+  
+```
+
+## Map 2: WQ Sonde Locations and other precipitation or discharge gauges for context
+
+```{r, echo = FALSE, out.width="100%"}
+mapview::mapview(larimer_Q, layer.name = "Larimer County Sensors",col.regions = "grey", cex = 5)+
+  mapview::mapview(usgs, layer.name = "USGS Sensors",col.regions = "green1", cex = 5)+
+mapview::mapview(DWR_present, layer.name = "DWR Sensors",col.regions = "orange", cex = 5)+
+    mapview::mapview(discrete_sampling, layer.name = "Grab Sample Locations", col.regions = "brown4", cex = 5)+
+   mapview::mapview(filter(sonde_locations, Final == "Yes"&Installed == "Yes"), layer.name = "Current ROSS Network",col.regions = "#43B54C", cex = 8)+
+      mapview::mapview(filter(sonde_locations, Final == "Yes" & Installed == "FCGOV"), layer.name = "Current Upper WQ Network",col.regions = "red1", cex = 8)+
+  mapview::mapview(filter(sonde_locations,site_name == "USGS -  Joe Wright Res inflow"), layer.name = " Virridy Sonde?",col.regions = "purple", cex = 8)+
+  mapview::mapview(filter(sonde_locations,Final == "Yes"& Installed == "No"), layer.name = "Proposed Upper WQ Network",col.regions = "blue", cex = 8)
+  
+  
+```
