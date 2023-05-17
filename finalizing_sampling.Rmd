@@ -1,0 +1,170 @@
+---
+title: "Finalizing Plans"
+author: "Sam Struthers"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include= FALSE }
+knitr::opts_chunk$set(echo = TRUE)
+source("package_loader.R")
+
+`%nin%` = Negate(`%in%`)
+
+colorize <- function(x, color) {
+  if (knitr::is_latex_output()) {
+    sprintf("\\textcolor{%s}{%s}", color, x)
+  } else if (knitr::is_html_output()) {
+    sprintf("<span style='color: %s;'>%s</span>", color,
+      x)
+  } else x
+}
+
+
+discrete_sampling<- arrow::read_csv_arrow("data/cpf_sites.csv")%>%
+  filter(!is.na(Lat)&!is.na(Long) & site_code %nin% c("ARCH","LEGC", "ELC",  "TIMB", "JOEI", "PBD"))
+
+sonde_locations <- read_csv_arrow("data/Sampling_Plans.csv")%>%
+    separate(lat_long, c("lat", "long"), sep = ",")%>%
+    # convert lat and long to numeric
+    mutate(lat = as.numeric(lat), long = as.numeric(long))%>%
+    # using lat and long convert the dataframe into a sf object projected to crs 4326
+    st_as_sf(coords = c("long", "lat"), crs = 4326)%>%
+  mutate(per_season_num  = may+june+july+august+september+october+november)
+    
+
+```
+
+```{r df_setup, echo = FALSE}
+dwr_sites <- c("JWCCHACO", "CLANSECO", "LAPLODCO","MICDCPCO", "LAPTUNCO", "GRNDRDCO")
+larimer_sites <- c("11523","11517","6720", "11021", "6770", "11516", "11515", "11004", "11514", "11525", "11527","11530", "11531", "11528","11518")
+
+usgs_sites <- c( "6746095", "6746110")
+
+sensor_locations_all <- arrow::read_csv_arrow("data/compiled_q_locations.csv")%>%
+  filter(!is.na(lat)&!is.na(long))%>%
+  st_as_sf(coords = c("long", "lat"), crs = 4326)
+
+DWR_present <- filter(sensor_locations_all, site_code %in% dwr_sites)
+
+larimer_Q <- filter(sensor_locations_all, site_num %in% larimer_sites)
+
+usgs <- filter(sensor_locations_all, site_num %in% usgs_sites)
+
+
+```
+
+# Map 1: Sonde vs grab vs trib
+
+This is a breakdown of all the sites we will sample this summer.
+
+```{r, echo = FALSE, out.width="100%"}
+
+   
+ map <-  mapview(filter(sonde_locations, Sonde %in% c("yes", "FCGOV")& site_code %nin%c("LBEA", "FISH")), layer.name = "Sonde + Grab Sample",col.regions = "blue", cex = 8)+
+    mapview(filter(sonde_locations,Sonde == "no"& Campaign != "Tributaries"), layer.name = "Grab Sample No Sonde",col.regions = "brown3", cex = 8)+
+         mapview(filter(sonde_locations,Campaign == "Tributaries" & site_code %nin%c("LBEA", "FISH")), layer.name = "Tributaries",col.regions = "black", cex = 8)
+   
+   
+mapshot(map, file = "output/test_mapshot.png")
+
+```
+
+## Map 2: Map broken down by grab sampling day
+
+We will conduct 3 types of grab sample days:\
+Mainstem, JWC Reservoirs and South Fork Reservoirs.\
+On mainstem days, we could pick up some trib sites (ROAR, BLAK, SHEP, (and SEVN if CitSci can't)). On reservoir days, we could grab SAWM. This would allow you to only have to sample Pingree park and Deadman area.\
+\
+We have done some estimates for personal vehicle reimbursement and we can pay technicians to drive their own vehicles for all of our planned sampling. However, FS vehicles would be much appreciated on rougher roads for safety. This would only be on South Fork Reservoir days although FS vehicle use for JWC reservoirs is always appreciated.\
+
+```{r, echo = FALSE, out.width="100%"}
+mapview::mapview(filter(sonde_locations, sampling_day == "Mainstem"), layer.name = "Mainstem",col.regions = "red1", cex = 8)+
+    mapview::mapview(filter(sonde_locations, sampling_day == "JWC Reservoirs" ), layer.name = "JWC Reservoirs",col.regions = "blue", cex = 8)+
+        mapview::mapview(filter(sonde_locations, sampling_day == "SF_reservoirs"), layer.name = "South Fork Reservoirs",col.regions = "#43B54C", cex = 8)
+  
+  
+```
+
+## Map 3: Sonde Calibration Grouping
+
+These would be separate days from our primary grab sample days to calibrate sondes, clear housings and take an additional sample to provide an additional lab match up. Each sonde should be calibrated every 2 to 3 weeks. We plan to install these sondes in late June and early July when flows decrease.\
+\
+All of these sites have easy access for personal vehicle use and do not necessarily require a FS vehicle use.
+
+```{r, echo = FALSE, out.width="100%"}
+
+mapview::mapview(filter(sonde_locations, site_code %in% c("PFAL", "JOEO", "CHD", "JOEI")), layer.name = "JWC Sites",col.regions = "blue", cex = 8)+
+  mapview::mapview(filter(sonde_locations, site_code %in% c("SFM")), layer.name = " South Fork Main Sondes",col.regions = "black", cex = 8)+
+  mapview::mapview(filter(sonde_locations, site_code == "PBD"), layer.name = "Canyon Mouth",col.regions = "red", cex = 8)
+
+```
+
+## Monthly Sample Breakdown
+
+This is a breakdown of our anticipated sample numbers per site, per month and then a season (May -\> November) total. The sites with higher season totals are sonde locations as they will have an additional sample on calibration days.
+
+```{r, echo = FALSE}
+sampling_by_month <- sonde_locations%>%
+  filter(site_code %nin% c("LBEA", "FISH"))%>%
+  select(site_code, Campaign,sampling_day, may, june, july, august, september, october, november, per_season_num)%>%
+  st_drop_geometry()
+
+sampling_by_month_simple <- sonde_locations%>%
+  filter(Campaign != "Tributaries")%>%
+  select(site_code,Sonde, Campaign,sampling_day, per_season_num)%>%
+  st_drop_geometry()
+
+
+write_csv(sampling_by_month_simple, file = "output/ROSS_final_sampling_num.csv")
+knitr::kable(sampling_by_month_simple)
+```
+
+## Season Totals
+
+Here are the estimate total number of samples for each campaign. Totals are provided at the bottom for ROSS campaigns (Mainstem, JWC Reservoirs and SF Reservoirs) and tributary samples collected by ROSS.
+
+```{r, echo = FALSE}
+sampling_numbers <- sampling_by_month%>%
+  group_by(Campaign)%>%
+  summarise(total = sum(per_season_num))
+
+knitr::kable(sampling_numbers)
+
+print("Total Number of  ROSS Samples: 206")
+print("Total Number of Collected Trib Samples: 36")
+
+
+# Summary of schedule
+# Twice a month for all sondes, all months
+# Twice a month in June all sites
+# Once a month sampling otherwise
+# Only mainstem in November
+# Add tribs to mainstem sampling
+    #36 samples all season
+
+# 206 total for all our samples
+# 230 if we add one more sample per sonde per month
+## this sampling would get us 13 grab sample snapshots 
+```
+
+## Additional Sondes:
+
+We had discussed managing additional sondes located at RMRS Tributary sites. We would take on the management, calibrations and grab samples collected at these sondes. Based on our previous experience with these sondes we would recommend locating them at Little Beaver and Fish Creek, due to stream depths, channel stability and collocation with your ISCO samplers. **PLEASE NOTE**: Calibration sampling days outlined above may change if we add additional sondes.
+
+If we choose to do these as well, it would add an additional 20 tributary samples collected by ROSS.
+
+```{r, echo =FALSE}
+# Vehicle Reimbursement
+reimburment_rate <- .56
+mile_by_day <- tibble(day = c("Reservoir", "Mainstem", "SF Res", "JWC Sonde Cal", "Canyon Mouth Cal"), 
+                      mile_per_day = c(155, 122,115, 136, 27 ), 
+                      total_days  = c(8, 8, 6, 7, 7))%>%
+  mutate(mile_total_per_day = mile_per_day *total_days)
+
+total_mileage <- sum(mile_by_day$mile_total_per_day)
+total_cost <- total_mileage*reimburment_rate
+
+# $2300 for vehicle reimbursement total
+
+```
