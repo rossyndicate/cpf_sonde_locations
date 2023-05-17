@@ -45,7 +45,7 @@ sonde_locations <- read.csv("data/potential_sonde_locations.csv", header = TRUE)
 
 -   [CPRW Sonde?:]{style="color:#EE2939"} Locations were CPRW sondes could be used and benefit their ongoing long term monitoring
 
--   [ Science Sonde:]{style="color:#2E5895"} Joe Wright Inflow Site were Larimer County does not have a radio tower set up and sonde would answer science questions rather than provide decision support to utility providers.
+-   [Science Sonde:]{style="color:#2E5895"} Joe Wright Inflow Site were Larimer County does not have a radio tower set up and sonde would answer science questions rather than provide decision support to utility providers.
 
 ```{r, echo = FALSE}
 
@@ -56,7 +56,6 @@ sonde_locations <- read.csv("data/potential_sonde_locations.csv", header = TRUE)
 ```
 
 # Map with Q/ Precip sites too
-
 
 ```{r, echo = FALSE}
 
@@ -90,3 +89,27 @@ mapview::mapview(DWR_present, layer.name = "DWR Sensors",col.regions = "orange",
   
 ```
 
+###  Upper and Lower Map 
+
+```{r, echo=FALSE}
+
+concise_locations <- sonde_locations%>%
+  select(site_name, Final, network = Installed)%>%
+  mutate(network = ifelse(network == "No"))
+
+mapview::mapview(filter(sonde_locations, Final == "Yes"&Installed == "Yes"), layer.name = "Current ROSS Network",col.regions = "#43B54C", cex = 8)+
+      mapview::mapview(filter(sonde_locations, Final == "Yes" & Installed == "FCGOV"), layer.name = "Current Upper WQ Network",col.regions = "red", cex = 8)+
+  mapview::mapview(filter(sonde_locations,site_name == "DWR - CLAFTCCO"), layer.name = " CLAFTCCO Co-location Site",col.regions = "purple", cex = 8)+
+  mapview::mapview(filter(sonde_locations,Final == "Yes"& Installed == "No" &site_name != "DWR - CLAFTCCO"), layer.name = "Proposed Upper WQ Network",col.regions = "blue", cex = 8)
+
+   
+
+    mapview::mapshot(x = proposed_network, file = "test_obj.jpg",remove_controls = NULL )
+    #c("layersControl", "zoomControl")
+    
+  mapview::mapview(filter(sonde_locations,Final == "Yes", Installed == "FCGOV"), layer.name = "Current Upper Network",col.regions = "red", cex = 6)
+
+
+  
+
+```
