@@ -35,6 +35,8 @@ sonde_locations <- read.csv("data/potential_sonde_locations.csv", header = TRUE)
     # color blue if CPRW_Sensor = yes and don't color if CPRW_Sensor = no
     
 
+clp_flowlines <- st_read("data/clp_flowlines")
+
 ```
 
 ## Map of site locations for sonde installations
@@ -89,7 +91,7 @@ mapview::mapview(DWR_present, layer.name = "DWR Sensors",col.regions = "orange",
   
 ```
 
-###  Upper and Lower Map 
+
 
 ```{r, echo=FALSE}
 
@@ -101,7 +103,6 @@ mapview::mapview(filter(sonde_locations, Final == "Yes"&Installed == "Yes"), lay
       mapview::mapview(filter(sonde_locations, Final == "Yes" & Installed == "FCGOV"), layer.name = "Current Upper WQ Network",col.regions = "red", cex = 8)+
   mapview::mapview(filter(sonde_locations,site_name == "DWR - CLAFTCCO"), layer.name = " CLAFTCCO Co-location Site",col.regions = "purple", cex = 8)+
   mapview::mapview(filter(sonde_locations,Final == "Yes"& Installed == "No" &site_name != "DWR - CLAFTCCO"), layer.name = "Proposed Upper WQ Network",col.regions = "blue", cex = 8)
-
    
 
     mapview::mapshot(x = proposed_network, file = "test_obj.jpg",remove_controls = NULL )
@@ -110,6 +111,25 @@ mapview::mapview(filter(sonde_locations, Final == "Yes"&Installed == "Yes"), lay
   mapview::mapview(filter(sonde_locations,Final == "Yes", Installed == "FCGOV"), layer.name = "Current Upper Network",col.regions = "red", cex = 6)
 
 
-  
+```
+
+# Permit maps
+
+```{r}
+
+ map <- mapview(filter(sonde_locations, site_name == "USGS -  Joe Wright Res inflow"), layer.name = "Proposed JOEI",col.regions = "blue", cex = 8)+
+  mapview(filter(sonde_locations, site_name == "USGS - JWCBJW"), layer.name = "Proposed JOEO",col.regions = "green4", cex = 8)+
+  mapview(filter(sonde_locations, site_name == "Larimer - Chambers"), layer.name = "Proposed CHD",col.regions = "red", cex = 8)+
+    mapview(filter(sonde_locations, site_name == "Larimer- Poudre Falls"), layer.name = "Proposed PFAL",col.regions = "grey", cex = 8)+
+    mapview(filter(sonde_locations, site_name == "Fort Collins - Poudre Below Rustic"), layer.name = "Fort Collins: PBR",col.regions = "purple4", cex = 8)+
+      mapview(filter(sonde_locations, site_name == "Larimer - SF Poudre at Pingree Park Road"), layer.name = "Proposed SFM",col.regions = "orange3", cex = 8)+
+  mapview(filter(sonde_locations, site_name == "Fort Collins -  Manner's Bridge"), layer.name = "Fort Collins: Manner's Bridge",col.regions = "red", cex = 8, alpha.regions = 1)+
+        mapview(filter(sonde_locations, site_name == "DWR - CLAFTCCO"), layer.name = "Proposed PBD",col.regions = "purple1", cex = 8)
+
+#+
+ # mapview(clp_flowlines,layer.name = "NHD Flowlines", col.regions = "#ADD8E6")
+map
+
 
 ```
+
