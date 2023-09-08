@@ -30,17 +30,17 @@ clp_flowlines <- st_read("data/clp_flowlines")
 
 ```{r maps, echo=FALSE, out.width="100%"}
 
- map <- mapview(filter(sonde_locations, site_name == "USGS -  Joe Wright Res inflow"), layer.name = "Installed JOEI",col.regions = "#34b1eb", cex = 8)+
-  mapview(filter(sonde_locations, site_name == "USGS - JWCBJW"), layer.name = "Installed: CBRI",col.regions = "green4", cex = 8)+
-  mapview(filter(sonde_locations, site_name == "Larimer - Chambers"), layer.name = "Installed: CHD",col.regions = "red", cex = 8)+
-    mapview(filter(sonde_locations, site_name == "Larimer- Poudre Falls"), layer.name = "Installed: PFAL",col.regions = "yellow", cex = 8)+
+ map <- mapview(filter(sonde_locations, site_name == "USGS -  Joe Wright Res inflow"), layer.name = "Installed: Above JW Res",col.regions = "#34b1eb", cex = 8)+
+  mapview(filter(sonde_locations, site_name == "USGS - JWCBJW"), layer.name = "Installed: Between JW and Chambers ",col.regions = "green4", cex = 8)+
+  mapview(filter(sonde_locations, site_name == "Larimer - Chambers"), layer.name = "Installed: Below Chambers",col.regions = "red", cex = 8)+
+    mapview(filter(sonde_locations, site_name == "Larimer- Poudre Falls"), layer.name = "Installed: CLP below Poudre Falls",col.regions = "yellow", cex = 8)+
     mapview(filter(sonde_locations, site_name %in% c("Fort Collins - Poudre Below Rustic", "Fort Collins -  Manner's Bridge" ) ), layer.name = "Existing City of Fort Collins Monitoring",col.regions = "#34ebba", cex = 8)+
   #mapview(filter(sonde_locations, site_name == "CSU- Mountain Campus"), layer.name = " South Fork @ CSU Mtn Campus",col.regions = "black", cex = 8)+
-      mapview(filter(sonde_locations, site_name == "Larimer - SF Poudre at Pingree Park Road"), layer.name = "Installed: SFM",col.regions = "orange1", cex = 8)+
+      mapview(filter(sonde_locations, site_name == "Larimer - SF Poudre at Pingree Park Road"), layer.name = "Installed: South Fork at Pingree",col.regions = "orange1", cex = 8)+
   #mapview(filter(sonde_locations, site_name == "DWR- CLASRKCO "), layer.name = "Proposed SFM Downstream",col.regions = "orange4", cex = 8)+
   #mapview(filter(sonde_locations, site_name == "Fort Collins -  Manner's Bridge"), layer.name = "Existing City of Fort Collins  Monitoring: Manner’s Bridge",col.regions = "#34ebba", cex = 8, alpha.regions = 1)+
-        mapview(filter(sonde_locations, site_name == "DWR - CLAFTCCO"), layer.name = "Installed: PBD",col.regions = "purple1", cex = 8)+
-        mapview(filter(sonde_locations, network == "Lower" & site_abbreviation %nin% c("SPRC")), layer.name = "Current Lower Network",col.regions = "blue", cex = 8)
+        mapview(filter(sonde_locations, site_name == "DWR - CLAFTCCO"), layer.name = "Installed: Canyon Mouth",col.regions = "purple1", cex = 8)
+        #mapview(filter(sonde_locations, network == "Lower" & site_abbreviation %nin% c("SPRC")), layer.name = "Current Lower Network",col.regions = "blue", cex = 8)
   #mapview(filter(sonde_locations, network == "Lower" & site_abbreviation %in% c("SPRC")), layer.name = "Proposed Lower Network",col.regions = "green", cex = 8)
   
 
